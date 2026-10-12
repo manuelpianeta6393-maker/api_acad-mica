@@ -1,17 +1,17 @@
 # API Académica
 
-API educativa para crear y consultar cursos académicos con **FastAPI, SQLModel y SQLite**. El código incluye comentarios en español para estudiar cómo se conectan las rutas HTTP, la validación de datos y la persistencia.
+API educativa para gestionar cursos (CRUD completo) y estudiantes (creación y consulta) con **FastAPI, SQLModel y SQLite**. El código incluye comentarios en español para estudiar cómo se conectan las rutas HTTP, la validación de datos y la persistencia.
 
 La explicación detallada del proyecto, la práctica con Swagger y los ejercicios están en la [guía para estudiantes](docs.md).
 
 ## Funcionalidades
 
-- Crear cursos con nombre, créditos y estado activo.
-- Consultar todos los cursos o buscar uno por su identificador.
-- Validar los datos de entrada y responder con errores HTTP.
-- Conservar los registros en una base de datos SQLite local.
+- **Cursos:** crear, listar, consultar por ID, actualizar (`PUT`, actualización completa) y eliminar.
+- **Estudiantes:** crear, listar y consultar por ID.
+- Validar los datos de entrada y responder con errores HTTP (`404` para recursos inexistentes, `422` para datos o IDs inválidos).
+- Conservar los registros en una única base de datos SQLite local (`database.db`) con las tablas `course` y `student`.
 
-El proyecto implementa creación y consulta. La actualización, eliminación, autenticación y paginación quedan como posibles ampliaciones.
+Quedan como posibles ampliaciones: actualización y eliminación de estudiantes, matrícula (relación estudiante–curso), autenticación y paginación.
 
 ## Tecnologías
 
@@ -72,8 +72,13 @@ La base de datos y sus tablas se crean al iniciar la aplicación. Ejecuta el com
 | `POST` | `/courses` | Crear un curso. | `201` |
 | `GET` | `/courses` | Listar todos los cursos. | `200` |
 | `GET` | `/courses/{course_id}` | Consultar un curso por ID. | `200` |
+| `PUT` | `/courses/{course_id}` | Actualizar todos los campos de un curso. | `200` |
+| `DELETE` | `/courses/{course_id}` | Eliminar un curso; responde `{"message": "Course deleted"}`. | `200` |
+| `POST` | `/students` | Crear un estudiante. | `201` |
+| `GET` | `/students` | Listar todos los estudiantes. | `200` |
+| `GET` | `/students/{student_id}` | Consultar un estudiante por ID. | `200` |
 
-Un curso inexistente devuelve `404`. Los datos que incumplen el esquema devuelven `422`. La ruta `/` no está definida; utiliza `/docs` o `/courses`.
+Un curso o estudiante inexistente devuelve `404` (`Course not found` / `Student not found`). Los datos que incumplen el esquema devuelven `422`. La ruta `/` no está definida; utiliza `/docs` o `/courses`.
 
 ## Ejemplo de uso
 
@@ -110,25 +115,58 @@ El ID es ilustrativo: SQLite lo asigna automáticamente. Usa el valor recibido p
 
 ### Reglas de entrada
 
+**Cursos — `POST /courses` (`CourseCreate`) y `PUT /courses/{course_id}` (`CourseUpdate`)**
+
 | Campo | Regla |
 | --- | --- |
 | `name` | Obligatorio; entre 3 y 80 caracteres. |
 | `credits` | Obligatorio; entero entre 1 y 6. |
+| `active` | Booleano. Opcional al crear (predeterminado `true`); obligatorio al actualizar. |
+
+**Estudiantes — `POST /students` (`StudentCreate`)**
+
+| Campo | Regla |
+| --- | --- |
+| `name` | Obligatorio; entre 3 y 80 caracteres. |
+| `email` | Obligatorio; texto no vacío. |
+| `semester` | Obligatorio; entero entre 1 y 10. |
 | `active` | Opcional; booleano con valor predeterminado `true`. |
+
+Ejemplo para crear un estudiante:
+
+```json
+{
+  "name": "Ana Pérez",
+  "email": "ana@universidad.edu",
+  "semester": 4
+}
+```
 
 ## Estructura del proyecto
 
 ```text
-fastapi_academica/
-├── main.py                     # Aplicación y ciclo de vida
-├── database/database.py        # Motor SQLite y sesiones
-├── models/course.py            # Modelo de la tabla de cursos
-├── schemas/course.py           # Esquemas de entrada y salida
-├── routers/courses.py          # Endpoints HTTP
-├── services/course_service.py  # Creación y consulta de registros
-├── requirements.txt            # Dependencias
-├── docs.md                     # Guía didáctica detallada
-└── README.md                   # Presentación e inicio rápido
+api_acad-mica/
+├── main.py                       # Aplicación, ciclo de vida y registro de routers
+├── database/database.py          # Motor SQLite y sesiones (compartidos)
+├── models/
+│   ├── course.py                 # Tabla course
+│   └── student.py                # Tabla student
+├── schemas/
+│   ├── course.py                 # CourseCreate, CourseUpdate, CourseResponse, MessageResponse
+│   └── student.py                # StudentCreate, StudentResponse
+├── services/
+│   ├── course_service.py         # Crear, listar, consultar, actualizar y eliminar cursos
+│   └── student_service.py        # Crear, listar y consultar estudiantes
+├── routers/
+│   ├── courses.py                # Endpoints /courses
+│   └── students.py               # Endpoints /students
+├── entrega-pruebas/
+│   ├── informe-pruebas.md        # Informe de pruebas
+│   └── evidencias/               # Capturas de Swagger
+├── requirements.txt              # Dependencias
+├── docs.md                       # Guía didáctica detallada
+├── ejercicio.md                  # Enunciado de los retos
+└── README.md                     # Presentación e inicio rápido
 ```
 
 El flujo principal es: **petición HTTP → router y validación → servicio → base de datos → respuesta JSON**.
