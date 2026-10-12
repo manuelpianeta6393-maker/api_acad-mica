@@ -10,6 +10,12 @@ class CourseCreate(BaseModel):
     active: bool = True
 
 
+class CourseUpdate(BaseModel):
+    name: str = Field(min_length=3, max_length=80)
+    credits: int = Field(ge=1, le=6)
+    active: bool
+
+
 # Esquema de salida: define los campos devueltos al cliente, incluido el ID.
 class CourseResponse(BaseModel):
     id: int
