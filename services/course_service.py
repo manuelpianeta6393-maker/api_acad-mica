@@ -59,3 +59,16 @@ def get_course(
         )
 
     return course
+
+
+def delete_course(
+    course_id: int,
+    session: Session
+):
+
+    course = get_course(course_id, session)
+
+    session.delete(course)
+    session.commit()
+
+    return {"message": "Course deleted"}

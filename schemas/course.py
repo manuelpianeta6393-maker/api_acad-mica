@@ -16,3 +16,7 @@ class CourseResponse(BaseModel):
     name: str
     credits: int
     active: bool
+
+
+class MessageResponse(BaseModel):
+    message: str
